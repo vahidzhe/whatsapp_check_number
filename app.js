@@ -1,6 +1,5 @@
 import qrterminal from "qrcode-terminal";
 import pkg from 'whatsapp-web.js';
-import puppeteer from 'puppeteer';
 import express from 'express';
 
 const app = express();
@@ -10,9 +9,8 @@ const { Client, LocalAuth } = pkg;
 const client = new Client({
     authStrategy: new LocalAuth(),
 });
+var response = null;
 
-// QR kodunu alma ve hazır olduğunda bildirim alma işlemleri için event'leri tanımlayın
-// QR kodunun alınması ve küçük olarak görüntülenmesi
 client.on("qr", async (qr) => {
     if (qr) {
         qrterminal.generate(qr, { small: true });
@@ -20,21 +18,31 @@ client.on("qr", async (qr) => {
 });
 
 app.get('/', (req, res) => {
-    res.json({ message: 'Salam Dünya!' }); // Kök URL'ye yapılan isteğe Salam Dünya! mesajıyla yanıt verir
+    res.json({ message: 'Salam Dünya!' });
 });
 
 client.on('ready', async () => {
-    console.log('Müştəri hazırdır!'); // Müşteri hazır olduğunda konsola bir mesaj yazdırır
-    app.get('/:number', async (req, res) => {
-        const { number } = req.params;
-        const isRegisteredUser = await client.isRegisteredUser(`994${number}@c.us`); // Girilen numaranın kayıtlı olup olmadığını kontrol eder
-        res.json({ message: isRegisteredUser }); // Sonuç olarak kayıtlı olup olmadığını yanıt olarak döner
-    });
+    console.log('Müştəri hazırdır!');
+});
+
+// Add route for /favicon.ico
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end();
+});
+
+app.get('/:number', async (req, res) => {
+    const { number } = req.params;
+    console.log(number);
+    client.isRegisteredUser(`994${number}@c.us`)
+        .then((req) => {
+            response = req;
+            res.json({ message: response });
+        })
+        .catch(err => console.log(err));
 });
 
 app.listen(port, () => {
-    console.log(`Nümunə tətbiq localhost:${port} portunda dinləyir`); // Uygulama belirtilen portta dinlemeye başladığında bir mesaj yazdırır
+    console.log(`Nümunə tətbiq http://localhost:${port} portunda dinləyir`);
 });
 
-// WhatsApp Web bağlantısını başlatır
 client.initialize();
